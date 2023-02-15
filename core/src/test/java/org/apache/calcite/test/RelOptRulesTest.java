@@ -4031,6 +4031,14 @@ class RelOptRulesTest extends RelOptTestBase {
     sql(sql).withRule(CoreRules.AGGREGATE_CASE_TO_FILTER).check();
   }
 
+  @Test void testAggregateCaseToFilterBug() {
+    final String sql = "SELECT\n"
+        + " sum(CASE WHEN deptno > 10 THEN sal ELSE 0 END) AS inv_before\n"
+        + "FROM emp\n"
+        + "GROUP BY deptno";
+    sql(sql).withRule(CoreRules.AGGREGATE_CASE_TO_FILTER).check();
+  }
+
   @Test void testPullAggregateThroughUnion() {
     final String sql = "select deptno, job from"
         + " (select deptno, job from emp as e1"

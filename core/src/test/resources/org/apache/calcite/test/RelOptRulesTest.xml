@@ -73,6 +73,27 @@ LogicalProject(SUM_SAL=[$0], COUNT_DISTINCT_CLERK=[$1], SUM_SAL_D10=[$2], SUM_SA
 ]]>
     </Resource>
   </TestCase>
+  <TestCase name="testAggregateCaseToFilterBug">
+  <Resource name="sql">
+    <![CDATA[SELECT
+ sum(CASE WHEN deptno > 10 THEN sal ELSE 0 END) AS inv_before
+FROM emp
+GROUP BY deptno]]>
+  </Resource>
+  <Resource name="planBefore">
+    <![CDATA[
+LogicalProject(INV_BEFORE=[$1])
+  LogicalAggregate(group=[{0}], INV_BEFORE=[SUM($1)])
+    LogicalProject(DEPTNO=[$7], $f1=[CASE(>($7, 10), $5, 0)])
+      LogicalTableScan(table=[[CATALOG, SALES, EMP]])
+]]>
+  </Resource>
+  <Resource name="planAfter">
+    <![CDATA[
+
+]]>
+  </Resource>
+  </TestCase>
   <TestCase name="testAggregateConstantKeyRule">
     <Resource name="sql">
       <![CDATA[select count(*) as c
