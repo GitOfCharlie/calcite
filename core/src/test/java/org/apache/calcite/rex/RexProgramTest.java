@@ -523,26 +523,37 @@ class RexProgramTest extends RexProgramTestBase {
         "=(?0.int0, 0)",
         "true");
 
-    // v in (0, 1) OR v IS NULL:
-    // OR(SEARCH(?0.int0, Sarg[0, 1]), IS NULL(?0.int0)) -> SEARCH(?0.int0, Sarg[0, 1, null])
-    checkSimplify(
-        or(
-            in(vInt(), literal(0), literal(1)),
-            isNull(vInt())),
-        "SEARCH(?0.int0, Sarg[0, 1, null])");
-
     // v = 0 OR v IS NULL:
-    // OR(=(?0.int0, 0), IS NULL(?0.int0)) -> SEARCH(?0.int0, Sarg[0, 1, null])
+    // OR(=(?0.int0, 0), IS NULL(?0.int0)) -> SEARCH(?0.int0, Sarg[0, null])
     checkSimplify(
         or(
             eq(vInt(), literal(0)),
             isNull(vInt())),
         "SEARCH(?0.int0, Sarg[0, null])");
 
-    // v = 0 OR v IS NOT NULL: OR(=(?0.int0, 0), IS NOT NULL(?0.int0))
-    checkSimplifyUnchanged(
-        or(
+    // v = 0 AND v IS NOT NULL:
+    // AND(=(?0.int0, 0), IS NOT NULL(?0.int0))
+    checkSimplify2(
+        and(
             eq(vInt(), literal(0)),
+            isNotNull(vInt())),
+        "AND(=(?0.int0, 0), IS NOT NULL(?0.int0))",
+        "=(?0.int0, 0)");
+
+    // v in (0, 1) OR v IS NULL:
+    // OR(SEARCH(?0.int0, Sarg[0, 1]), IS NULL(?0.int0)) ->
+    // SEARCH(?0.int0, Sarg[0, 1, null])
+    checkSimplify(
+        or(
+            in(vInt(), literal(0), literal(1)),
+            isNull(vInt())),
+        "SEARCH(?0.int0, Sarg[0, 1, null])");
+
+    // v in (0, 1) AND v IS NOT NULL:
+    // AND(SEARCH(?0.int0, Sarg[0, 1]), IS NOT NULL(?0.int0))
+    checkSimplifyUnchanged(
+        and(
+            in(vInt(), literal(0), literal(1)),
             isNotNull(vInt())));
   }
 
