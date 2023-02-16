@@ -510,6 +510,42 @@ class RexProgramTest extends RexProgramTestBase {
         "false");
   }
 
+  @Test void testSimplifyInOrBug() {
+    // v = 0: =(?0.int0, 0)
+    checkSimplifyUnchanged(
+        eq(vInt(), literal(0)));
+    // v in (0, 1): SEARCH(?0.int0, Sarg[0, 1])
+    checkSimplifyUnchanged(
+        in(vInt(), literal(0), literal(1)));
+    // v in (0, null):
+    // OR(=(?0.int0, 0), =(?0.int0, null)) -> OR(=(?0.int0, 0), null)
+    checkSimplify3(
+        in(vInt(), literal(0), literal((Integer) null)),
+        "OR(=(?0.int0, 0), null)",
+        "=(?0.int0, 0)",
+        "true");
+    // v in (0, 1) OR v IS NULL:
+    // OR(SEARCH(?0.int0, Sarg[0, 1]), IS NULL(?0.int0)) -> SEARCH(?0.int0, Sarg[0, 1; NULL AS TRUE])
+    checkSimplify(
+        or(
+            in(vInt(), literal(0), literal(1)),
+            isNull(vInt())),
+        "SEARCH(?0.int0, Sarg[0, 1; NULL AS TRUE])");
+    // v = 0 OR v IS NULL:
+    // OR(=(?0.int0, 0), IS NULL(?0.int0)) -> SEARCH(?0.int0, Sarg[0; NULL AS TRUE])
+    checkSimplify(
+        or(
+            eq(vInt(), literal(0)),
+            isNull(vInt())),
+        "SEARCH(?0.int0, Sarg[0; NULL AS TRUE])");
+
+    // checkSimplify(
+    //     or(
+    //         gt(vInt(), literal(0)),
+    //         isNull(vInt())),
+    //     ">(?0.int0, 0)");
+  }
+
   @Disabled("CALCITE-3457: AssertionError in RexSimplify.validateStrongPolicy")
   @Test void reproducerFor3457() {
     // Identified with RexProgramFuzzyTest#testFuzzy, seed=4887662474363391810L
