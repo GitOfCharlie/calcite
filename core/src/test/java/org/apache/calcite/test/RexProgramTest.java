@@ -1283,6 +1283,33 @@ public class RexProgramTest extends RexProgramBuilderBase {
         "IS NOT NULL(?0.int1)");
   }
 
+  @Test public void testSimplifyBug() {
+    // Bug of Calcite-3192, Calcite-3803
+    // "1 < a or (a < 3 and b = 2)" can be simplified if a is not nullable.
+    checkSimplify2(
+        or(
+            lt(literal(1), vIntNotNull()),
+            and(
+                lt(vIntNotNull(), literal(3)),
+                vBoolNotNull(1)
+            )
+        ),
+        "OR(<(1, ?0.notNullInt0), AND(<(?0.notNullInt0, 3), ?0.notNullBool1))",
+        "OR(<(1, ?0.notNullInt0), ?0.notNullBool1)"
+    );
+
+    // "1 < a or (a < 3 and b = 2)" can't be simplified if a is nullable.
+    checkSimplifyUnchanged(
+        or(
+            lt(literal(1), vInt()),
+            and(
+                lt(vInt(), literal(3)),
+                vBoolNotNull(2)
+            )
+        )
+    );
+  }
+
   @Test public void simplifyStrong() {
     checkSimplify(ge(trueLiteral, falseLiteral), "true");
     checkSimplify3(ge(trueLiteral, nullBool), "null:BOOLEAN", "false", "true");
