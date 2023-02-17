@@ -1283,7 +1283,7 @@ public class RexProgramTest extends RexProgramBuilderBase {
         "IS NOT NULL(?0.int1)");
   }
 
-  @Test public void testSimplifyBug() {
+  @Test public void testOrSimplificationNotWeakensCondition() {
     // Bug of Calcite-3192, Calcite-3803
     // "1 < a or (a < 3 and b = 2)" can be simplified if a is not nullable.
     checkSimplify2(
