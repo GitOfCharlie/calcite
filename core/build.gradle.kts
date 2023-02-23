@@ -98,6 +98,8 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation(kotlin("test-junit5"))
     testRuntimeOnly("org.apache.logging.log4j:log4j-slf4j-impl")
+
+    implementation("mysql:mysql-connector-java:8.0.28")
 }
 
 tasks.jar {
