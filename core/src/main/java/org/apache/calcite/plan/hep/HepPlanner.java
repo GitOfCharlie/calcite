@@ -416,8 +416,15 @@ public class HepPlanner extends AbstractRelOptPlanner {
       while (iter.hasNext()) {
         HepRelVertex vertex = iter.next();
         for (RelOptRule rule : rules) {
+          System.out.println("yyc!");
+          System.startConcolic();
+          System.symbolize(vertex);
           HepRelVertex newVertex =
               applyRule(rule, vertex, forceConversions);
+          System.out.println(System.getPathCondition());
+          // System.printSymExp(vertex);
+          // System.printSymExp(newVertex);
+          System.endConcolic();
           if (newVertex == null || newVertex == vertex) {
             continue;
           }
