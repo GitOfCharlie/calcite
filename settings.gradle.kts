@@ -62,6 +62,7 @@ include(
     "release",
     "babel",
     "cassandra",
+    "concolic",
     "core",
     "druid",
     "elasticsearch",
