@@ -2122,6 +2122,10 @@ public abstract class RelOptUtil {
         asXml ? SqlExplainFormat.XML : SqlExplainFormat.TEXT, detailLevel);
   }
 
+  public static String dumpPlan(RelNode rel) {
+    return dumpPlan("", rel, SqlExplainFormat.TEXT, SqlExplainLevel.EXPPLAN_ATTRIBUTES);
+  }
+
   /**
    * Creates the row type descriptor for the result of a DML operation, which
    * is a single column named ROWCOUNT of type BIGINT for INSERT;

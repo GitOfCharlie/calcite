@@ -20,6 +20,7 @@ import org.apache.calcite.avatica.util.Spaces;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.linq4j.tree.TableExpressionFactory;
+import org.apache.calcite.log.StepwiseSqlLogger;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptSamplingParameters;
@@ -588,11 +589,23 @@ public class SqlToRelConverter {
       SqlNode query,
       final boolean needsValidation,
       final boolean top) {
+    // YC: Stepwise logging (first time in this function)
+    StepwiseSqlLogger.incIndent();
+    StepwiseSqlLogger.log(query);
+
     if (needsValidation) {
       query = validator().validate(query);
     }
 
+    // YC: Stepwise logging
+    StepwiseSqlLogger.log(query);
+
     RelNode result = convertQueryRecursive(query, top, null).rel;
+
+    // YC: Stepwise logging (exit the function)
+    StepwiseSqlLogger.log(RelOptUtil.dumpPlan(result));
+    StepwiseSqlLogger.decIndent();
+
     if (top) {
       if (isStream(query)) {
         result = new LogicalDelta(cluster, result.getTraitSet(), result);

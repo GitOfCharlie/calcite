@@ -24,19 +24,24 @@ public class WorkflowTest {
   private static final String MYSQL_DB_CONN_URL = "10.0.0.103:3306";
   private static final String MYSQL_DB_USER = "root";
   private static final String MYSQL_DB_PASSWORD = "admin";
+  private static final String MYSQL_DRIVER = "com.mysql.jdbc.Driver";
   private static final String PG_DB_CONN_URL = "10.0.0.103:5432";
   private static final String PG_DB_USER = "root";
   private static final String PG_DB_PASSWORD = "";
-  @Test void workflow() {
-    Properties info = new Properties();
-    final boolean mysqlSource = true;
+  private static final String PG_DRIVER = "org.postgresql.Driver";
 
-    final String dbName = "broadleaf" + "_" + "base";
+  @Test
+  void workflow() {
+    Properties info = new Properties();
+    final boolean mysqlSource = false;
+
+    final String dbName = "calcite_test";
     final String sourceName = mysqlSource ? "mysql" : "postgresql";
     final String schemaName = mysqlSource ? dbName : "public";
     final String url = mysqlSource ? MYSQL_DB_CONN_URL : PG_DB_CONN_URL;
     final String user = mysqlSource ? MYSQL_DB_USER : PG_DB_USER;
     final String password = mysqlSource ? MYSQL_DB_PASSWORD : PG_DB_PASSWORD;
+    final String driver = mysqlSource ? MYSQL_DRIVER : PG_DRIVER;
 
     info.put("model", "inline:{" +
         "  version: '1.0'," +
@@ -47,33 +52,42 @@ public class WorkflowTest {
         "      type: 'custom'," +
         "      factory: 'org.apache.calcite.adapter.jdbc.JdbcSchema$Factory'," +
         "      operand: {" +
-        "        jdbcDriver: 'com.mysql.jdbc.Driver'," +
+        "        jdbcDriver: '" + driver + "'," +
         // "        jdbcUrl:'jdbc:log4jdbc:" + sourceName + "://" + url + "/" + dbName + "'," +
         "        jdbcUrl:'jdbc:" + sourceName + "://" + url + "/" + dbName + "'," +
         "        jdbcUser: '" + user + "'," +
-      "        jdbcPassword: '" + password + "'" +
-      "      }" +
-      "    }" +
-      "  ]" +
-      "}");
+        "        jdbcPassword: '" + password + "'" +
+        "      }" +
+        "    }" +
+        "  ]" +
+        "}");
 
     final String sql =
-        "SELECT u1.ADMIN_USER_ID FROM blc_admin_user u1 " +
-            "WHERE ADMIN_USER_ID = 1 AND ADMIN_USER_ID IS NOT NULL";
-    try {
-      Class.forName("com.mysql.jdbc.Driver");
+        "SELECT sum(CASE WHEN deptno > 10 THEN sal ELSE 0 END) AS inv_before\n"
+            + "FROM emp\n"
+            + "GROUP BY deptno"; // Calcite-2
+    // "SELECT sum(sal) as sal FROM emp ORDER BY sal"; // Calcite-1
 
-      final Connection connection = DriverManager.getConnection("jdbc:calcite:caseSensitive=false", info);
-      // final CalciteConnection calciteConnection = (CalciteConnection) connection.unwrap(CalciteConnection.class);
-      //statement = connection.prepareStatement(sql);
-      //resultSet = statement.executeQuery();
+    try {
+      if (mysqlSource) {
+        Class.forName("com.mysql.jdbc.Driver");
+      } else {
+        Class.forName("org.postgresql.Driver");
+      }
+
+      final Connection connection =
+          DriverManager.getConnection("jdbc:calcite:caseSensitive=false", info);
+      // final CalciteConnection calciteConnection = (CalciteConnection) connection.unwrap
+      // (CalciteConnection.class);
+      // statement = connection.prepareStatement(sql);
+      // resultSet = statement.executeQuery();
       final Statement statement = connection.createStatement();
       final ResultSet resultSet = statement.executeQuery(sql);
 
       final StringBuilder buf = new StringBuilder();
-      while(resultSet.next()) {
+      while (resultSet.next()) {
         int n = resultSet.getMetaData().getColumnCount();
-        for(int i = 1; i <= n; ++i) {
+        for (int i = 1; i <= n; ++i) {
           buf.append(i > 1 ? "; " : "").
               append(resultSet.getMetaData().getColumnLabel(i)).append("=").append(resultSet.getObject(i));
         }
@@ -84,7 +98,6 @@ public class WorkflowTest {
       e.printStackTrace();
     }
   }
-
 
 
 }

@@ -45,6 +45,7 @@ val testMysql by configurations.creating(integrationTestConfig)
 
 dependencies {
     api(project(":linq4j"))
+    api(project(":concolic"))
 
     api("org.locationtech.jts:jts-core")
     api("org.locationtech.jts.io:jts-io-common")
@@ -100,6 +101,7 @@ dependencies {
     testRuntimeOnly("org.apache.logging.log4j:log4j-slf4j-impl")
 
     implementation("mysql:mysql-connector-java:8.0.28")
+    implementation("org.postgresql:postgresql:42.5.1")
 }
 
 tasks.jar {

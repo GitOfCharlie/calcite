@@ -18,6 +18,7 @@ package org.apache.calcite.sql2rel;
 
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.linq4j.function.Function2;
+import org.apache.calcite.log.StepwiseSqlLogger;
 import org.apache.calcite.plan.Context;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCostImpl;
@@ -218,7 +219,14 @@ public class RelDecorrelator implements ReflectiveVisitor {
         new RelDecorrelator(corelMap,
             cluster.getPlanner().getContext(), relBuilder);
 
+    // YC: Stepwise logging (first time in this function)
+    StepwiseSqlLogger.incIndent();
+    StepwiseSqlLogger.log(RelOptUtil.dumpPlan(rootRel));
+
     RelNode newRootRel = decorrelator.removeCorrelationViaRule(rootRel);
+
+    // YC: Stepwise logging
+    StepwiseSqlLogger.log(RelOptUtil.dumpPlan(rootRel));
 
     if (SQL2REL_LOGGER.isDebugEnabled()) {
       SQL2REL_LOGGER.debug(
@@ -229,6 +237,10 @@ public class RelDecorrelator implements ReflectiveVisitor {
     if (!decorrelator.cm.mapCorToCorRel.isEmpty()) {
       newRootRel = decorrelator.decorrelate(newRootRel);
     }
+
+    // YC: Stepwise logging (exit the function)
+    StepwiseSqlLogger.log(RelOptUtil.dumpPlan(newRootRel));
+    StepwiseSqlLogger.decIndent();
 
     // Re-propagate the hints.
     newRootRel = RelOptUtil.propagateRelHints(newRootRel, true);
