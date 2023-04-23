@@ -18,6 +18,7 @@ package org.apache.calcite.sql.validate;
 
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.linq4j.function.Functions;
+import org.apache.calcite.log.StepwiseSqlLogger;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.prepare.Prepare;
@@ -1036,7 +1037,15 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
   private SqlNode validateScopedExpression(
       SqlNode topNode,
       SqlValidatorScope scope) {
+    // YC: Stepwise logging (first time in this function)
+    StepwiseSqlLogger.incIndent();
+    StepwiseSqlLogger.log(topNode);
+
     SqlNode outermostNode = performUnconditionalRewrites(topNode, false);
+
+    // YC: Stepwise logging
+    StepwiseSqlLogger.log(outermostNode);
+
     cursorSet.add(outermostNode);
     top = outermostNode;
     TRACER.trace("After unconditional rewrite: {}", outermostNode);
@@ -1044,6 +1053,11 @@ public class SqlValidatorImpl implements SqlValidatorWithHints {
       registerQuery(scope, null, outermostNode, outermostNode, null, false);
     }
     outermostNode.validate(this, scope);
+
+    // YC: Stepwise logging (exit the function)
+    StepwiseSqlLogger.log(outermostNode);
+    StepwiseSqlLogger.decIndent();
+
     if (!outermostNode.isA(SqlKind.TOP_LEVEL)) {
       // force type derivation so that we can provide it to the
       // caller later without needing the scope

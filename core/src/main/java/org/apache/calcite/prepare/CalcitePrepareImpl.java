@@ -48,6 +48,7 @@ import org.apache.calcite.linq4j.tree.MethodCallExpression;
 import org.apache.calcite.linq4j.tree.NewExpression;
 import org.apache.calcite.linq4j.tree.ParameterExpression;
 import org.apache.calcite.linq4j.tree.PseudoField;
+import org.apache.calcite.log.StepwiseSqlLogger;
 import org.apache.calcite.materialize.MaterializationService;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.Convention;
@@ -605,6 +606,13 @@ public class CalcitePrepareImpl implements CalcitePrepare {
     final RelDataType x;
     final Prepare.PreparedResult preparedResult;
     final Meta.StatementType statementType;
+
+    // YC: Stepwise logging (first time in this function)
+    StepwiseSqlLogger.incIndent();
+    if (query.sql != null) StepwiseSqlLogger.log(query.sql);
+    else if (query.queryable != null) StepwiseSqlLogger.log(query.queryable);
+    else StepwiseSqlLogger.log(query.rel);
+
     if (query.sql != null) {
       final CalciteConnectionConfig config = context.config();
       SqlParser.Config parserConfig = parserConfig()
@@ -622,6 +630,10 @@ public class CalcitePrepareImpl implements CalcitePrepare {
       SqlNode sqlNode;
       try {
         sqlNode = parser.parseStmt();
+
+        // YC: Stepwise logging
+        StepwiseSqlLogger.log(sqlNode);
+
         statementType = getStatementType(sqlNode.getKind());
       } catch (SqlParseException e) {
         throw new RuntimeException(
@@ -646,6 +658,12 @@ public class CalcitePrepareImpl implements CalcitePrepare {
 
       preparedResult = preparingStmt.prepareSql(
           sqlNode, Object.class, validator, true);
+
+      // YC: Stepwise logging
+      StepwiseSqlLogger.log(
+          RelOptUtil.dumpPlan(
+              ((Prepare.PreparedResultImpl) preparedResult).getRootRel()));
+
       switch (sqlNode.getKind()) {
       case INSERT:
       case DELETE:
@@ -661,11 +679,23 @@ public class CalcitePrepareImpl implements CalcitePrepare {
       x = context.getTypeFactory().createType(elementType);
       preparedResult =
           preparingStmt.prepareQueryable(query.queryable, x);
+
+      // YC: Stepwise logging
+      StepwiseSqlLogger.log(
+          RelOptUtil.dumpPlan(
+              ((Prepare.PreparedResultImpl) preparedResult).getRootRel()));
+
       statementType = getStatementType(preparedResult);
     } else {
       assert query.rel != null;
       x = query.rel.getRowType();
       preparedResult = preparingStmt.prepareRel(query.rel);
+
+      // YC: Stepwise logging
+      StepwiseSqlLogger.log(
+          RelOptUtil.dumpPlan(
+              ((Prepare.PreparedResultImpl) preparedResult).getRootRel()));
+
       statementType = getStatementType(preparedResult);
     }
 
@@ -683,6 +713,9 @@ public class CalcitePrepareImpl implements CalcitePrepare {
               getClassName(type),
               field.getName()));
     }
+
+    // YC: Stepwise logging (exit the function)
+    StepwiseSqlLogger.decIndent();
 
     RelDataType jdbcType = makeStruct(typeFactory, x);
     final List<? extends @Nullable List<String>> originList = preparedResult.getFieldOrigins();

@@ -19,6 +19,7 @@ package org.apache.calcite.tools;
 import org.apache.calcite.adapter.enumerable.EnumerableRules;
 import org.apache.calcite.config.CalciteConnectionConfig;
 import org.apache.calcite.config.CalciteSystemProperty;
+import org.apache.calcite.log.StepwiseSqlLogger;
 import org.apache.calcite.plan.RelOptCostImpl;
 import org.apache.calcite.plan.RelOptLattice;
 import org.apache.calcite.plan.RelOptMaterialization;
@@ -332,10 +333,15 @@ public class Programs {
         RelTraitSet requiredOutputTraits,
         List<RelOptMaterialization> materializations,
         List<RelOptLattice> lattices) {
+      // YC: Stepwise logging (first time in this function)
+      StepwiseSqlLogger.incIndent();
+      StepwiseSqlLogger.log(RelOptUtil.dumpPlan(rel));
       for (Program program : programs) {
         rel = program.run(
             planner, rel, requiredOutputTraits, materializations, lattices);
       }
+      // YC: Stepwise logging (exit the function)
+      StepwiseSqlLogger.decIndent();
       return rel;
     }
   }

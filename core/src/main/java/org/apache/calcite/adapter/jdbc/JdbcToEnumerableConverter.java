@@ -31,11 +31,9 @@ import org.apache.calcite.linq4j.tree.Expressions;
 import org.apache.calcite.linq4j.tree.ParameterExpression;
 import org.apache.calcite.linq4j.tree.Primitive;
 import org.apache.calcite.linq4j.tree.UnaryExpression;
-import org.apache.calcite.plan.ConventionTraitDef;
-import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptCost;
-import org.apache.calcite.plan.RelOptPlanner;
-import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.log.StepwiseSqlLogger;
+import org.apache.calcite.plan.*;
+import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterImpl;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
@@ -104,8 +102,18 @@ public class JdbcToEnumerableConverter
     final JdbcConvention jdbcConvention =
         (JdbcConvention) requireNonNull(child.getConvention(),
             () -> "child.getConvention() is null for " + child);
+
+    // YC: Stepwise logging (first time in this function)
+    StepwiseSqlLogger.incIndent();
+    StepwiseSqlLogger.log(RelOptUtil.dumpPlan(this.getInput()));
+
     SqlString sqlString = generateSql(jdbcConvention.dialect);
     String sql = sqlString.getSql();
+
+    // YC: Stepwise logging (exit the function)
+    StepwiseSqlLogger.log(sqlString.getSql());
+    StepwiseSqlLogger.decIndent();
+
     if (CalciteSystemProperty.DEBUG.value()) {
       System.out.println("[" + sql + "]");
     }

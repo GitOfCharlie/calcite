@@ -22,6 +22,7 @@ import org.apache.calcite.avatica.Meta;
 import org.apache.calcite.jdbc.CalcitePrepare;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.jdbc.CalciteSchema.LatticeEntry;
+import org.apache.calcite.log.StepwiseSqlLogger;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptLattice;
 import org.apache.calcite.plan.RelOptMaterialization;
@@ -247,9 +248,16 @@ public abstract class Prepare {
           sqlExplain.getDynamicParamCount());
     }
 
+    // YC: Stepwise logging (first time in this function)
+    StepwiseSqlLogger.incIndent();
+    StepwiseSqlLogger.log(sqlQuery);
+
     RelRoot root =
         sqlToRelConverter.convertQuery(sqlQuery, needsValidation, true);
     Hook.CONVERTED.run(root.rel);
+
+    // YC: Stepwise logging
+    StepwiseSqlLogger.log(RelOptUtil.dumpPlan(root.rel));
 
     if (timingTracer != null) {
       timingTracer.traceTime("end sql2rel");
@@ -282,13 +290,22 @@ public abstract class Prepare {
     // storage.
     root = root.withRel(flattenTypes(root.rel, true));
 
+    // YC: Stepwise logging
+    StepwiseSqlLogger.log(RelOptUtil.dumpPlan(root.rel));
+
     if (this.context.config().forceDecorrelate()) {
       // Sub-query decorrelation.
       root = root.withRel(decorrelate(sqlToRelConverter, sqlQuery, root.rel));
     }
 
+    // YC: Stepwise logging
+    StepwiseSqlLogger.log(RelOptUtil.dumpPlan(root.rel));
+
     // Trim unused fields.
     root = trimUnusedFields(root);
+
+    // YC: Stepwise logging
+    StepwiseSqlLogger.log(RelOptUtil.dumpPlan(root.rel));
 
     Hook.TRIMMED.run(root.rel);
 
@@ -305,6 +322,9 @@ public abstract class Prepare {
 
     root = optimize(root, getMaterializations(), getLattices());
 
+    // YC: Stepwise logging
+    StepwiseSqlLogger.log(RelOptUtil.dumpPlan(root.rel));
+
     if (timingTracer != null) {
       timingTracer.traceTime("end optimization");
     }
@@ -315,7 +335,16 @@ public abstract class Prepare {
     if (!root.kind.belongsTo(SqlKind.DML)) {
       root = root.withKind(sqlNodeOriginal.getKind());
     }
-    return implement(root);
+
+    final PreparedResult res = implement(root);
+
+    // YC: Stepwise logging (exit the function)
+    // FIXME: here the target object is the executable JAVA code, not a SQL or relational plan
+    // So whether need to log here?
+    StepwiseSqlLogger.log(RelOptUtil.dumpPlan(((PreparedResultImpl) res).getRootRel()));
+    StepwiseSqlLogger.decIndent();
+
+    return res;
   }
 
   protected TableModify.@Nullable Operation mapTableModOp(

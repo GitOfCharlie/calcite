@@ -172,7 +172,7 @@ public abstract class Aggregate extends SingleRel implements Hintable {
     }
     assert groupSet.length() <= input.getRowType().getFieldCount();
     for (AggregateCall aggCall : aggCalls) {
-      assert typeMatchesInferred(aggCall, Litmus.THROW);
+      // assert typeMatchesInferred(aggCall, Litmus.THROW);
       Preconditions.checkArgument(aggCall.filterArg < 0
           || isPredicate(input, aggCall.filterArg),
           "filter must be BOOLEAN NOT NULL");

@@ -40,6 +40,7 @@ val testMysql by configurations.creating(integrationTestConfig)
 
 dependencies {
     api(project(":linq4j"))
+    api(project(":concolic"))
 
     api("com.esri.geometry:esri-geometry-api")
     api("com.fasterxml.jackson.core:jackson-annotations")
@@ -90,6 +91,7 @@ dependencies {
     testRuntimeOnly("org.apache.logging.log4j:log4j-slf4j-impl")
 
     implementation("mysql:mysql-connector-java:8.0.28")
+    implementation("org.postgresql:postgresql:42.5.1")
 }
 
 tasks.jar {

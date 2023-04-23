@@ -36,6 +36,7 @@ import org.apache.calcite.linq4j.Queryable;
 import org.apache.calcite.linq4j.function.Function1;
 import org.apache.calcite.linq4j.function.Functions;
 import org.apache.calcite.linq4j.function.Predicate1;
+import org.apache.calcite.log.StepwiseSqlLogger;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rel.type.RelDataTypeFactoryImpl;
@@ -620,7 +621,18 @@ public class CalciteMetaImpl extends MetaImpl {
             calciteConnection.server.getStatement(h);
         final Context context = statement.createPrepareContext();
         final CalcitePrepare.Query<Object> query = toQuery(context, sql);
+
+        // YC: Stepwise logging
+        if (query.sql != null) StepwiseSqlLogger.log(query.sql);
+        else if (query.queryable != null) StepwiseSqlLogger.log(query.queryable);
+        else StepwiseSqlLogger.log(query.rel);
+
         signature = calciteConnection.parseQuery(query, context, maxRowCount);
+
+        // YC: Stepwise logging
+        // FIXME: returns executable code, whether need to log it?
+        // StepwiseSqlLogger.log(signature.sql);
+
         statement.setSignature(signature);
         switch (signature.statementType) {
         case CREATE:

@@ -17,14 +17,29 @@
 
 package org.apache.calcite.log;
 
-public class StepwiseSqlLogger {
+import java.util.Collections;
 
+public class StepwiseSqlLogger {
   public static final boolean ENABLE_SQL_LOG = true;
+
+  private static int indent = 0;
+  private static final int INDENT_LEN = 2;
+
+  public static void incIndent() {
+    indent += INDENT_LEN;
+  }
+
+  public static void decIndent() {
+    if (indent > 0) {
+      indent -= INDENT_LEN;
+    }
+  }
 
   public static void log(Object o) {
     if (ENABLE_SQL_LOG) {
       trace();
-      System.out.println(o);
+      System.out.println(indent("Object Type: " + o.getClass()));
+      System.out.println(indent(o.toString()));
       System.out.println();
     }
   }
@@ -38,7 +53,15 @@ public class StepwiseSqlLogger {
     final String fileName = e.getFileName();
     final int lineNumber = e.getLineNumber();
     System.out.println(
-        "Trace: " + className + "." + methodName + " (" + fileName + ":" + lineNumber + ")");
+        indent(
+            "Trace: " + className + "." + methodName + " (" + fileName + ":" + lineNumber + ")"));
+  }
+
+  private static String indent(String s) {
+    final String headIndent = String.join("", Collections.nCopies(indent, "-"));
+    final String indentStr = String.join("", Collections.nCopies(indent, " "));
+    s = headIndent + s.replaceAll(System.lineSeparator(), System.lineSeparator() + indentStr);
+    return s;
   }
 
 }
