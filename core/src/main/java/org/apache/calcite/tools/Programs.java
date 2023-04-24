@@ -340,6 +340,9 @@ public class Programs {
       for (Program program : programs) {
         rel = program.run(
             planner, rel, requiredOutputTraits, materializations, lattices);
+
+        // YC: Stepwise logging (first time in this function)
+        StepwiseSqlLogger.log(RelOptUtil.dumpPlan(rel));
       }
       // YC: Stepwise logging (exit the function)
       StepwiseSqlLogger.decIndent();
