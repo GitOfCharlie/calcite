@@ -63,9 +63,17 @@ public class WorkflowTest {
         "}");
 
     final String sql =
-        "SELECT sum(CASE WHEN deptno > 10 THEN sal ELSE 0 END) AS inv_before\n"
-            + "FROM emp\n"
-            + "GROUP BY deptno"; // Calcite-2
+        "select sum(sal) from ((select sal as sal from emp) union all (select sal as sal from emp))";
+
+        // "select count(t1), t2 from (\n"
+        // + "select (case when deptno=0 then 1 else null end) as t1, 1 as t2 from emp e1\n"
+        // + "union all\n"
+        // + "select (case when deptno=0 then 1 else null end) as t1, 2 as t2 from emp e2)\n"
+        // + "group by t2"; // Calcite-39
+
+        // "SELECT sum(CASE WHEN deptno > 10 THEN sal ELSE 0 END) AS inv_before\n"
+        //     + "FROM emp\n"
+        //     + "GROUP BY deptno"; // Calcite-2
     // "SELECT sum(sal) as sal FROM emp ORDER BY sal"; // Calcite-1
 
     try {
